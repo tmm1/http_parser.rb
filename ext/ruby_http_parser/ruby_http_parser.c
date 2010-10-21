@@ -5,6 +5,9 @@
 /*
  * Find the first occurrence of find in s, where the search is limited to the
  * first slen characters of s.
+ *
+ * NOTE: we use strnstr below for header matching so we don't need to
+ * memcpy then memcmp from the input buffer
  */
 #ifndef HAVE_STRNSTR
 static char *strnstr(const char *s, const char *find, size_t slen) {
