@@ -28,13 +28,38 @@ static char *strnstr(const char *s, const char *find, size_t slen) {
 #endif
 
 #define GET_WRAPPER(N, from)  ParserWrapper *N = (ParserWrapper *)(from)->data;
+
+#ifdef HAVE_RUBY_ENCODING_H
+#include <ruby/encoding.h>
+#define STR_NEW(str, len, rb_enc)                                     \
+  ({                                                                  \
+    VALUE _string;                                                    \
+    rb_encoding *internal_encoding = rb_default_internal_encoding();  \
+    if(rb_enc) {                                                      \
+      _string = rb_enc_str_new(str, len, rb_enc);                     \
+    } else {                                                          \
+      _string = rb_str_new(str, len);                                 \
+    }                                                                 \
+    if(internal_encoding) {                                           \
+      _string = rb_str_export_to_enc(_string, internal_encoding);     \
+    }                                                                 \
+    _string;                                                          \
+  })
+
+#else
+
+#define STR_NEW(str, len, rb_enc) \
+  rb_str_new(str, len)
+
+#endif
+
 #define HASH_CAT(h, k, ptr, len)                \
   do {                                          \
     VALUE __v = rb_hash_aref(h, k);             \
     if (__v != Qnil) {                          \
       rb_str_cat(__v, ptr, len);                \
     } else {                                    \
-      rb_hash_aset(h, k, rb_str_new(ptr, len)); \
+      rb_hash_aset(h, k, STR_NEW(ptr, len, 0)); \
     }                                           \
   } while(0)
 
@@ -54,6 +79,9 @@ typedef struct ParserWrapper {
   VALUE on_message_complete;
 
   VALUE last_field_name;
+#ifdef HAVE_RUBY_ENCODING_H
+  rb_encoding *body_encoding;
+#endif
   const char *last_field_name_at;
   size_t last_field_name_length;
 
@@ -172,7 +200,27 @@ int on_header_value(http_parser *parser, const char *at, size_t length) {
   GET_WRAPPER(wrapper, parser);
 
   if (wrapper->last_field_name == Qnil) {
-    wrapper->last_field_name = rb_str_new(wrapper->last_field_name_at, wrapper->last_field_name_length);
+#ifdef HAVE_RUBY_ENCODING_H
+    rb_encoding *rb_enc = NULL;
+    char *enc = NULL;
+    char *found = strnstr(wrapper->last_field_name_at, "Content-Type", wrapper->last_field_name_length);
+    if(found) {
+      enc = strnstr(at, "charset=", length);
+      if (enc) {
+        enc += sizeof("charset=")-1;
+        size_t enc_len = (size_t)length-(enc-at);
+        char encoding[enc_len+1];
+        memcpy(encoding, enc, enc_len);
+        encoding[enc_len] = 0;
+        rb_enc = rb_enc_find(encoding);
+        if (rb_enc) {
+          wrapper->body_encoding = rb_enc;
+        }
+      }
+    }
+#endif
+
+    wrapper->last_field_name = STR_NEW(wrapper->last_field_name_at, wrapper->last_field_name_length, 0);
     wrapper->last_field_name_at = NULL;
     wrapper->last_field_name_length = 0;
   }
@@ -196,7 +244,17 @@ int on_body(http_parser *parser, const char *at, size_t length) {
   GET_WRAPPER(wrapper, parser);
 
   if (wrapper->on_body != Qnil) {
-    rb_funcall(wrapper->on_body, sCall, 1, rb_str_new(at, length));
+    VALUE body_chunk = Qnil;
+#ifdef HAVE_RUBY_ENCODING_H
+    if (wrapper->body_encoding) {
+      body_chunk = STR_NEW(at, length, wrapper->body_encoding);
+    } else {
+      body_chunk = STR_NEW(at, length, 0);
+    }
+#else
+    body_chunk = STR_NEW(at, length, 0);
+#endif
+    rb_funcall(wrapper->on_body, sCall, 1, body_chunk);
   }
 
   return 0;
@@ -229,6 +287,9 @@ VALUE Parser_alloc_by_type(VALUE klass, enum http_parser_type type) {
   ParserWrapper *wrapper = ALLOC_N(ParserWrapper, 1);
   wrapper->type = type;
   wrapper->parser.data = wrapper;
+#ifdef HAVE_RUBY_ENCODING_H
+  wrapper->body_encoding = NULL;
+#endif
 
   ParserWrapper_init(wrapper);
 
@@ -337,7 +398,7 @@ VALUE Parser_http_method(VALUE self) {
   DATA_GET(self, ParserWrapper, wrapper);
 
   if (wrapper->parser.type == HTTP_REQUEST)
-    return rb_str_new2(http_method_str(wrapper->parser.method));
+    return STR_NEW(http_method_str(wrapper->parser.method), strlen(http_method_str(wrapper->parser.method)), 0);
   else
     return Qnil;
 }
