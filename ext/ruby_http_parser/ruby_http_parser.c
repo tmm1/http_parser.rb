@@ -147,10 +147,10 @@ static VALUE sCall;
 int on_message_begin(http_parser *parser) {
   GET_WRAPPER(wrapper, parser);
 
-  wrapper->request_url = rb_str_new2("");
-  wrapper->request_path = rb_str_new2("");
-  wrapper->query_string = rb_str_new2("");
-  wrapper->fragment = rb_str_new2("");
+  wrapper->request_url = STR_NEW("", 0, 0);
+  wrapper->request_path = STR_NEW("", 0, 0);
+  wrapper->query_string = STR_NEW("", 0, 0);
+  wrapper->fragment = STR_NEW("", 0, 0);
   wrapper->headers = rb_hash_new();
 
   if (wrapper->on_message_begin != Qnil) {
