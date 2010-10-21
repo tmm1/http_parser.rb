@@ -225,7 +225,7 @@ VALUE ResponseParser_alloc(VALUE klass) {
 VALUE Parser_execute(VALUE self, VALUE data) {
   ParserWrapper *wrapper = NULL;
   char *ptr = RSTRING_PTR(data);
-  long len = RSTRING_LEN(data);
+  unsigned long len = RSTRING_LEN(data);
 
   DATA_GET(self, ParserWrapper, wrapper);
 
