@@ -34,6 +34,8 @@ typedef struct ParserWrapper {
   VALUE stopped;
   VALUE completed;
 
+  VALUE cookie_array;
+  
   VALUE last_field_name;
   VALUE curr_field_name;
 
@@ -56,6 +58,8 @@ void ParserWrapper_init(ParserWrapper *wrapper) {
   wrapper->headers = Qnil;
   wrapper->completed = Qfalse;
 
+  wrapper->cookie_array = Qnil;
+
   wrapper->last_field_name = Qnil;
   wrapper->curr_field_name = Qnil;
 }
@@ -69,6 +73,7 @@ void ParserWrapper_mark(void *data) {
     rb_gc_mark_maybe(wrapper->fragment);
     rb_gc_mark_maybe(wrapper->upgrade_data);
     rb_gc_mark_maybe(wrapper->headers);
+    rb_gc_mark_maybe(wrapper->cookie_array);
     rb_gc_mark_maybe(wrapper->on_message_begin);
     rb_gc_mark_maybe(wrapper->on_headers_complete);
     rb_gc_mark_maybe(wrapper->on_body);
@@ -167,7 +172,9 @@ int on_header_field(ryah_http_parser *parser, const char *at, size_t length) {
 int on_header_value(ryah_http_parser *parser, const char *at, size_t length) {
   GET_WRAPPER(wrapper, parser);
 
+  int new_field = 0;
   if (wrapper->last_field_name == Qnil) {
+    new_field = 1;
     wrapper->last_field_name = wrapper->curr_field_name;
     wrapper->curr_field_name = Qnil;
 
@@ -176,6 +183,17 @@ int on_header_value(ryah_http_parser *parser, const char *at, size_t length) {
       rb_str_cat(val, ", ", 2);
     }
   }
+
+  if (STRNCASECMP("set-cookie:", StringValuePtr(wrapper->last_field_name), 11));
+  {
+    if (new_field == 1) {
+      if (wrapper->cookie_array == Qnil) {
+        wrapper->cookie_array = rb_ary_new2(1);
+      }
+      rb_ary_push(wrapper->cookie_array, rb_str_new2(""));
+    }
+    rb_str_cat(rb_ary_entry(wrapper->cookie_array, -1), at, length);
+   }
 
   HASH_CAT(wrapper->headers, wrapper->last_field_name, at, length);
 
@@ -426,6 +444,7 @@ DEFINE_GETTER(query_string);
 DEFINE_GETTER(fragment);
 DEFINE_GETTER(headers);
 DEFINE_GETTER(upgrade_data);
+DEFINE_GETTER(cookie_array);
 
 VALUE Parser_reset(VALUE self) {
   ParserWrapper *wrapper = NULL;
@@ -478,6 +497,7 @@ void Init_ruby_http_parser() {
   rb_define_method(cParser, "fragment", Parser_fragment, 0);
   rb_define_method(cParser, "headers", Parser_headers, 0);
   rb_define_method(cParser, "upgrade_data", Parser_upgrade_data, 0);
+  rb_define_method(cParser, "cookie_array", Parser_cookie_array, 0);
 
   rb_define_method(cParser, "reset!", Parser_reset, 0);
 }

@@ -144,6 +144,19 @@ describe HTTP::Parser do
     }
   end
 
+  it "should handle cookies" do
+    @parser <<
+      "GET / HTTP/1.0\r\n" +
+      "Set-Cookie: PREF=ID=a7d2c98; expires=Fri, 05-Apr-2013 05:00:45 GMT; path=/; domain=.bob.com\r\n" +
+      "Set-Cookie: NID=46jSHxPM; path=/; domain=.bob.com; HttpOnly\r\n" +
+      "\r\n"
+
+    @parser.cookie_array.should == [
+      "PREF=ID=a7d2c98; expires=Fri, 05-Apr-2013 05:00:45 GMT; path=/; domain=.bob.com",
+      "NID=46jSHxPM; path=/; domain=.bob.com; HttpOnly"
+    ]
+  end
+
   it "should support alternative api" do
     callbacks = double('callbacks')
     callbacks.stub(:on_message_begin){ @started = true }
