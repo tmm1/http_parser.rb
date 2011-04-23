@@ -1,6 +1,7 @@
 package org.ruby_http_parser;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -59,6 +60,8 @@ public class RubyHttpParser extends RubyObject {
   private IRubyObject queryString;
   private IRubyObject fragment;
 
+  private IRubyObject header_value_type;
+
   private IRubyObject callback_object;
 
   private String _current_header;
@@ -76,6 +79,8 @@ public class RubyHttpParser extends RubyObject {
     this.on_message_complete = null;
 
     this.callback_object = null;
+
+    this.header_value_type = runtime.getModule("HTTP").getClass("Parser").getInstanceVariable("@default_header_value_type");
 
     initSettings();
     init();
@@ -130,25 +135,45 @@ public class RubyHttpParser extends RubyObject {
         byte[] data = fetchBytes(buf, pos, len);
         ThreadContext context = headers.getRuntime().getCurrentContext();
         IRubyObject key, val;
+        int new_field = 0;
 
         if (_current_header != null) {
+          new_field = 1;
           _last_header = _current_header;
           _current_header = null;
+        }
 
-          key = (IRubyObject)runtime.newString(_last_header);
-          val = headers.op_aref(context, key);
+        key = (IRubyObject)runtime.newString(_last_header);
+        val = headers.op_aref(context, key);
 
-          if (!val.isNil())
-            ((RubyString)val).cat(", ".getBytes());
-        } else {
-          key = (IRubyObject)runtime.newString(_last_header);
+        if (new_field == 1) {
+          if (val.isNil()) {
+            if (header_value_type == runtime.newSymbol("arrays")) {
+              headers.op_aset(context, key, RubyArray.newArrayLight(runtime, runtime.newString("")));
+            } else {
+              headers.op_aset(context, key, runtime.newString(""));
+            }
+          } else {
+            if (header_value_type == runtime.newSymbol("mixed")) {
+              if (val instanceof RubyString) {
+                headers.op_aset(context, key, RubyArray.newArrayLight(runtime, val, runtime.newString("")));
+              } else {
+                ((RubyArray)val).add(runtime.newString(""));
+              }
+            } else if (header_value_type == runtime.newSymbol("arrays")) {
+              ((RubyArray)val).add(runtime.newString(""));
+            } else {
+              ((RubyString)val).cat(", ".getBytes());
+            }
+          }
           val = headers.op_aref(context, key);
         }
 
-        if (val.isNil())
-          headers.op_aset(context, key, runtime.newString(new String(data)));
-        else
-          ((RubyString)val).cat(data);
+        if (val instanceof RubyArray) {
+          val = ((RubyArray)val).entry(-1);
+        }
+
+        ((RubyString)val).cat(data);
 
         return 0;
       }
@@ -267,6 +292,12 @@ public class RubyHttpParser extends RubyObject {
   public IRubyObject initialize(IRubyObject arg) {
     callback_object = arg;
     return initialize();
+  }
+
+  @JRubyMethod(name = "initialize")
+  public IRubyObject initialize(IRubyObject arg, IRubyObject arg2) {
+    header_value_type = arg2;
+    return initialize(arg);
   }
 
   @JRubyMethod(name = "on_message_begin=")
@@ -394,6 +425,20 @@ public class RubyHttpParser extends RubyObject {
     return fragment == null ? runtime.getNil() : fragment;
   }
 
+  @JRubyMethod(name = "header_value_type")
+  public IRubyObject getHeaderValueType() {
+    return header_value_type == null ? runtime.getNil() : header_value_type;
+  }
+
+  @JRubyMethod(name = "header_value_type=")
+  public IRubyObject set_header_value_type(IRubyObject val) {
+    if (val != runtime.newSymbol("mixed") && val != runtime.newSymbol("arrays") && val != runtime.newSymbol("strings")) {
+      throw runtime.newArgumentError("Invalid header value type");
+    }
+    header_value_type = val;
+    return val;
+  }
+  
   @JRubyMethod(name = "reset!")
   public IRubyObject reset() {
     init();

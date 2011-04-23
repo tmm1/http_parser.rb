@@ -34,6 +34,8 @@ typedef struct ParserWrapper {
   VALUE stopped;
   VALUE completed;
 
+  VALUE header_value_type;
+  
   VALUE last_field_name;
   VALUE curr_field_name;
 
@@ -98,6 +100,9 @@ static ID Ion_body;
 static ID Ion_message_complete;
 
 static VALUE Sstop;
+static VALUE Sarrays;
+static VALUE Sstrings;
+static VALUE Smixed;
 
 /** Callbacks **/
 
@@ -167,17 +172,45 @@ int on_header_field(ryah_http_parser *parser, const char *at, size_t length) {
 int on_header_value(ryah_http_parser *parser, const char *at, size_t length) {
   GET_WRAPPER(wrapper, parser);
 
+  int new_field = 0;
+  VALUE current_value;
+
   if (wrapper->last_field_name == Qnil) {
+    new_field = 1;
     wrapper->last_field_name = wrapper->curr_field_name;
     wrapper->curr_field_name = Qnil;
-
-    VALUE val = rb_hash_aref(wrapper->headers, wrapper->last_field_name);
-    if (val != Qnil) {
-      rb_str_cat(val, ", ", 2);
-    }
   }
 
-  HASH_CAT(wrapper->headers, wrapper->last_field_name, at, length);
+  current_value = rb_hash_aref(wrapper->headers, wrapper->last_field_name);
+
+  if (new_field == 1) {
+    if (current_value == Qnil) {
+      if (wrapper->header_value_type == Sarrays) {
+        rb_hash_aset(wrapper->headers, wrapper->last_field_name, rb_ary_new3(1, rb_str_new2("")));
+      } else {
+        rb_hash_aset(wrapper->headers, wrapper->last_field_name, rb_str_new2(""));
+      }
+    } else {
+      if (wrapper->header_value_type == Smixed) {
+        if (TYPE(current_value) == T_STRING) {
+          rb_hash_aset(wrapper->headers, wrapper->last_field_name, rb_ary_new3(2, current_value, rb_str_new2("")));
+        } else {
+          rb_ary_push(current_value, rb_str_new2(""));
+        }
+      } else if (wrapper->header_value_type == Sarrays) {
+        rb_ary_push(current_value, rb_str_new2(""));
+      } else {
+        rb_str_cat(current_value, ", ", 2);
+      }
+    }
+    current_value = rb_hash_aref(wrapper->headers, wrapper->last_field_name);
+  }
+
+  if (TYPE(current_value) == T_ARRAY) {
+    current_value = rb_ary_entry(current_value, -1);
+  }
+
+  rb_str_cat(current_value, at, length);
 
   return 0;
 }
@@ -286,8 +319,16 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
   ParserWrapper *wrapper = NULL;
   DATA_GET(self, ParserWrapper, wrapper);
 
-  if (argc == 1)
+  wrapper->header_value_type = rb_iv_get(CLASS_OF(self), "@default_header_value_type");
+
+  if (argc == 1) {
     wrapper->callback_object = argv[0];
+  }
+
+  if (argc == 2) {
+    wrapper->callback_object = argv[0];
+    wrapper->header_value_type = argv[1];
+  }
 
   return self;
 }
@@ -426,6 +467,18 @@ DEFINE_GETTER(query_string);
 DEFINE_GETTER(fragment);
 DEFINE_GETTER(headers);
 DEFINE_GETTER(upgrade_data);
+DEFINE_GETTER(header_value_type);
+
+VALUE Parser_set_header_value_type(VALUE self, VALUE val) {
+  if (val != Sarrays && val != Sstrings && val != Smixed) {
+    rb_raise(rb_eArgError, "Invalid header value type");
+  }
+  
+  ParserWrapper *wrapper = NULL;
+  DATA_GET(self, ParserWrapper, wrapper);
+  wrapper->header_value_type = val;
+  return wrapper->header_value_type;
+}
 
 VALUE Parser_reset(VALUE self) {
   ParserWrapper *wrapper = NULL;
@@ -449,6 +502,10 @@ void Init_ruby_http_parser() {
   Ion_body = rb_intern("on_body");
   Ion_message_complete = rb_intern("on_message_complete");
   Sstop = ID2SYM(rb_intern("stop"));
+
+  Sarrays = ID2SYM(rb_intern("arrays"));
+  Sstrings = ID2SYM(rb_intern("strings"));
+  Smixed = ID2SYM(rb_intern("mixed"));
 
   rb_define_alloc_func(cParser, Parser_alloc);
   rb_define_alloc_func(cRequestParser, RequestParser_alloc);
@@ -478,6 +535,8 @@ void Init_ruby_http_parser() {
   rb_define_method(cParser, "fragment", Parser_fragment, 0);
   rb_define_method(cParser, "headers", Parser_headers, 0);
   rb_define_method(cParser, "upgrade_data", Parser_upgrade_data, 0);
+  rb_define_method(cParser, "header_value_type", Parser_header_value_type, 0);
+  rb_define_method(cParser, "header_value_type=", Parser_set_header_value_type, 1);
 
   rb_define_method(cParser, "reset!", Parser_reset, 0);
 }
