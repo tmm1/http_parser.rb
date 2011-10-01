@@ -53,11 +53,11 @@ describe HTTP::Parser do
   it "should throw an Argument Error if header value type is invalid" do
     proc{ @parser.header_value_type = 'bob' }.should raise_error(ArgumentError)
   end
-  
+
   it "should throw an Argument Error if default header value type is invalid" do
     proc{ HTTP::Parser.default_header_value_type = 'bob' }.should raise_error(ArgumentError)
   end
-  
+
   it "should implement basic api" do
     @parser <<
       "GET /test?ok=1 HTTP/1.1\r\n" +
@@ -133,6 +133,25 @@ describe HTTP::Parser do
     @parser.request_path.should be_nil
     @parser.query_string.should be_nil
     @parser.fragment.should be_nil
+  end
+
+  it "should optionally reset parser state on no-body responses" do
+   @parser.reset!.should be_true
+
+   @head, @complete = 0, 0
+   @parser.on_headers_complete = proc {|h| @head += 1; :reset }
+   @parser.on_message_complete = proc { @complete += 1 }
+   @parser.on_body = proc {|b| fail }
+
+   head_response = "HTTP/1.1 200 OK\r\nContent-Length:10\r\n\r\n"
+
+   @parser << head_response
+   @head.should == 1
+   @complete.should == 1
+
+   @parser << head_response
+   @head.should == 2
+   @complete.should == 2
   end
 
   it "should retain callbacks after reset" do

@@ -100,6 +100,7 @@ static ID Ion_body;
 static ID Ion_message_complete;
 
 static VALUE Sstop;
+static VALUE Sreset;
 static VALUE Sarrays;
 static VALUE Sstrings;
 static VALUE Smixed;
@@ -229,6 +230,8 @@ int on_headers_complete(ryah_http_parser *parser) {
   if (ret == Sstop) {
     wrapper->stopped = Qtrue;
     return -1;
+  } else if (ret == Sreset){
+    return 1;
   } else {
     return 0;
   }
@@ -502,6 +505,7 @@ void Init_ruby_http_parser() {
   Ion_body = rb_intern("on_body");
   Ion_message_complete = rb_intern("on_message_complete");
   Sstop = ID2SYM(rb_intern("stop"));
+  Sreset = ID2SYM(rb_intern("reset"));
 
   Sarrays = ID2SYM(rb_intern("arrays"));
   Sstrings = ID2SYM(rb_intern("strings"));
