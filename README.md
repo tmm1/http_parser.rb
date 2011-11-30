@@ -62,8 +62,8 @@ This gem aims to work on all major Ruby platforms, including:
         @body = ''
       end
 
-      def on_headers_complete
-        @headers = @parser.headers
+      def on_headers_complete(headers)
+        @headers = headers
       end
 
       def on_body(chunk)
