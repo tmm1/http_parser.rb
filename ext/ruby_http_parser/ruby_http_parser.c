@@ -108,6 +108,7 @@ static VALUE Smixed;
 /** Callbacks **/
 
 int on_message_begin(ryah_http_parser *parser) {
+  VALUE ret;
   GET_WRAPPER(wrapper, parser);
 
   wrapper->request_url = rb_str_new2("");
@@ -117,7 +118,7 @@ int on_message_begin(ryah_http_parser *parser) {
   wrapper->headers = rb_hash_new();
   wrapper->upgrade_data = rb_str_new2("");
 
-  VALUE ret = Qnil;
+  ret = Qnil;
 
   if (wrapper->callback_object != Qnil && rb_respond_to(wrapper->callback_object, Ion_message_begin)) {
     ret = rb_funcall(wrapper->callback_object, Ion_message_begin, 0);
@@ -171,10 +172,10 @@ int on_header_field(ryah_http_parser *parser, const char *at, size_t length) {
 }
 
 int on_header_value(ryah_http_parser *parser, const char *at, size_t length) {
-  GET_WRAPPER(wrapper, parser);
-
   int new_field = 0;
   VALUE current_value;
+
+  GET_WRAPPER(wrapper, parser);
 
   if (wrapper->last_field_name == Qnil) {
     new_field = 1;
@@ -217,9 +218,9 @@ int on_header_value(ryah_http_parser *parser, const char *at, size_t length) {
 }
 
 int on_headers_complete(ryah_http_parser *parser) {
-  GET_WRAPPER(wrapper, parser);
-
   VALUE ret = Qnil;
+
+  GET_WRAPPER(wrapper, parser);
 
   if (wrapper->callback_object != Qnil && rb_respond_to(wrapper->callback_object, Ion_headers_complete)) {
     ret = rb_funcall(wrapper->callback_object, Ion_headers_complete, 1, wrapper->headers);
@@ -238,9 +239,9 @@ int on_headers_complete(ryah_http_parser *parser) {
 }
 
 int on_body(ryah_http_parser *parser, const char *at, size_t length) {
-  GET_WRAPPER(wrapper, parser);
-
   VALUE ret = Qnil;
+
+  GET_WRAPPER(wrapper, parser);
 
   if (wrapper->callback_object != Qnil && rb_respond_to(wrapper->callback_object, Ion_body)) {
     ret = rb_funcall(wrapper->callback_object, Ion_body, 1, rb_str_new(at, length));
@@ -257,9 +258,10 @@ int on_body(ryah_http_parser *parser, const char *at, size_t length) {
 }
 
 int on_message_complete(ryah_http_parser *parser) {
+  VALUE ret = Qnil;
+
   GET_WRAPPER(wrapper, parser);
 
-  VALUE ret = Qnil;
   wrapper->completed = Qtrue;
 
   if (wrapper->callback_object != Qnil && rb_respond_to(wrapper->callback_object, Ion_message_complete)) {
@@ -277,16 +279,16 @@ int on_message_complete(ryah_http_parser *parser) {
 }
 
 static ryah_http_parser_settings settings = {
-  .on_message_begin = on_message_begin,
-  .on_path = on_path,
-  .on_query_string = on_query_string,
-  .on_url = on_url,
-  .on_fragment = on_fragment,
-  .on_header_field = on_header_field,
-  .on_header_value = on_header_value,
-  .on_headers_complete = on_headers_complete,
-  .on_body = on_body,
-  .on_message_complete = on_message_complete
+  on_message_begin, // .on_message_begin
+  on_path, //.on_path
+  on_query_string, //.on_query_string
+  on_url, //.on_url
+  on_fragment, //.on_fragment
+  on_header_field, //.on_header_field
+  on_header_value, //.on_header_value
+  on_headers_complete, //.on_headers_complete
+  on_body, //.on_body
+  on_message_complete //.on_message_complete
 };
 
 VALUE Parser_alloc_by_type(VALUE klass, enum ryah_http_parser_type type) {
@@ -337,16 +339,19 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
 }
 
 VALUE Parser_execute(VALUE self, VALUE data) {
+  char *ptr = NULL;
+  long len;
+  size_t nparsed;
   ParserWrapper *wrapper = NULL;
 
   Check_Type(data, T_STRING);
-  char *ptr = RSTRING_PTR(data);
-  long len = RSTRING_LEN(data);
+  *ptr = RSTRING_PTR(data);
+  len = RSTRING_LEN(data);
 
   DATA_GET(self, ParserWrapper, wrapper);
 
   wrapper->stopped = Qfalse;
-  size_t nparsed = ryah_http_parser_execute(&wrapper->parser, &settings, ptr, len);
+  nparsed = ryah_http_parser_execute(&wrapper->parser, &settings, ptr, len);
 
   if (wrapper->parser.upgrade) {
     rb_str_cat(wrapper->upgrade_data, ptr + nparsed + 1, len - nparsed - 1);
@@ -473,11 +478,12 @@ DEFINE_GETTER(upgrade_data);
 DEFINE_GETTER(header_value_type);
 
 VALUE Parser_set_header_value_type(VALUE self, VALUE val) {
+  ParserWrapper *wrapper = NULL;
+
   if (val != Sarrays && val != Sstrings && val != Smixed) {
     rb_raise(rb_eArgError, "Invalid header value type");
   }
 
-  ParserWrapper *wrapper = NULL;
   DATA_GET(self, ParserWrapper, wrapper);
   wrapper->header_value_type = val;
   return wrapper->header_value_type;
