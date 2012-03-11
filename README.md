@@ -16,70 +16,75 @@ This gem aims to work on all major Ruby platforms, including:
 
 ## Usage
 
-    require "http/parser"
+```ruby
+require "http/parser"
 
-    parser = Http::Parser.new
+parser = Http::Parser.new
 
-    parser.on_headers_complete = proc do
-      p parser.http_version
+parser.on_headers_complete = proc do
+  p parser.http_version
 
-      p parser.http_method # for requests
-      p parser.request_url
+  p parser.http_method # for requests
+  p parser.request_url
 
-      p parser.status_code # for responses
+  p parser.status_code # for responses
 
-      p parser.headers
-    end
+  p parser.headers
+end
 
-    parser.on_body = proc do |chunk|
-      # One chunk of the body
-      p chunk
-    end
+parser.on_body = proc do |chunk|
+  # One chunk of the body
+  p chunk
+end
 
-    parser.on_message_complete = proc do |env|
-      # Headers and body is all parsed
-      puts "Done!"
-    end
+parser.on_message_complete = proc do |env|
+  # Headers and body is all parsed
+  puts "Done!"
+end
+```
 
-    # Feed raw data from the socket to the parser
-    parser << raw_data
+# Feed raw data from the socket to the parser
+`parser << raw_data`
 
 ## Advanced Usage
 
 ### Accept callbacks on an object
 
-    module MyHttpConnection
-      def connection_completed
-        @parser = Http::Parser.new(self)
-      end
+```ruby
+module MyHttpConnection
+  def connection_completed
+    @parser = Http::Parser.new(self)
+  end
 
-      def receive_data(data)
-        @parser << data
-      end
+  def receive_data(data)
+    @parser << data
+  end
 
-      def on_message_begin
-        @headers = nil
-        @body = ''
-      end
+  def on_message_begin
+    @headers = nil
+    @body = ''
+  end
 
-      def on_headers_complete(headers)
-        @headers = headers
-      end
+  def on_headers_complete(headers)
+    @headers = headers
+  end
 
-      def on_body(chunk)
-        @body << chunk
-      end
+  def on_body(chunk)
+    @body << chunk
+  end
 
-      def on_message_complete
-        p [@headers, @body]
-      end
-    end
+  def on_message_complete
+    p [@headers, @body]
+  end
+end
+```
 
 ### Stop parsing after headers
 
-    parser = Http::Parser.new
-    parser.on_headers_complete = proc{ :stop }
+```ruby
+parser = Http::Parser.new
+parser.on_headers_complete = proc{ :stop }
 
-    offset = parser << request_data
-    body = request_data[offset..-1]
-
+offset = parser << request_data
+body = request_data[offset..-1]
+```

@@ -3,6 +3,7 @@ require "rubygems"
 require "thin_parser"
 require "http_parser"
 require "benchmark"
+require "stringio"
 
 data = "POST /postit HTTP/1.1\r\n" +
        "Host: localhost:3000\r\n" +
