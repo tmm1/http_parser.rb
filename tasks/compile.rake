@@ -1,4 +1,4 @@
-require 'rake/gempackagetask'
+require 'rubygems/package_task'
 require 'rake/extensiontask'
 require 'rake/javaextensiontask'
 
@@ -6,7 +6,7 @@ def gemspec
   @clean_gemspec ||= eval(File.read(File.expand_path('../../http_parser.rb.gemspec', __FILE__)))
 end
 
-Rake::GemPackageTask.new(gemspec) do |pkg|
+Gem::PackageTask.new(gemspec) do |pkg|
 end
 
 if RUBY_PLATFORM =~ /java/

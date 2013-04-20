@@ -14,13 +14,18 @@ task :fixtures => :submodules do
     tmp.gsub!('TRUE', 'true')
     tmp.gsub!('FALSE', 'false')
 
+    # mark strict mode tests
+    tmp.gsub!(%r|#if\s+!HTTP_PARSER_STRICT(.+?)#endif\s*/\*\s*!HTTP_PARSER_STRICT.+\n|m){
+      $1.gsub(/^(.+,\.type= .+)$/, "\\1\n,  .strict= false")
+    }
+
     # remove macros and comments
     tmp.gsub!(/^#(if|elif|endif|define).+$/,'')
     tmp.gsub!(/\/\*(.+?)\*\/$/,'')
 
     # HTTP_* enums become strings
     tmp.gsub!(/(= )(HTTP_\w+)/){
-      "#{$1}#{$2.dump}"
+      "#{$1}#{$2.sub('MSEARCH','M-SEARCH').dump}"
     }
 
     # join multiline strings for body and raw data
@@ -55,6 +60,7 @@ task :fixtures => :submodules do
     results.map{ |res|
       res[:headers] and res[:headers] = Hash[*res[:headers].flatten]
       res[:method]  and res[:method].gsub!(/^HTTP_/, '')
+      res[:strict] = true unless res.has_key?(:strict)
     }
 
     # write to a file

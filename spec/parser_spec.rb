@@ -24,9 +24,6 @@ describe HTTP::Parser do
     @parser.status_code.should be_nil
 
     @parser.request_url.should be_nil
-    @parser.request_path.should be_nil
-    @parser.query_string.should be_nil
-    @parser.fragment.should be_nil
 
     @parser.header_value_type.should == :mixed
   end
@@ -78,9 +75,6 @@ describe HTTP::Parser do
     @parser.status_code.should be_nil
 
     @parser.request_url.should == '/test?ok=1'
-    @parser.request_path.should == '/test'
-    @parser.query_string.should == 'ok=1'
-    @parser.fragment.should be_empty
 
     @parser.headers.should == @headers
     @parser.headers['User-Agent'].should == 'curl/7.18.0'
@@ -119,9 +113,6 @@ describe HTTP::Parser do
     @parser.http_version.should == [1,0]
 
     @parser.request_url.should == '/'
-    @parser.request_path.should == '/'
-    @parser.query_string.should == ''
-    @parser.fragment.should == ''
 
     @parser.reset!.should be_true
 
@@ -130,9 +121,6 @@ describe HTTP::Parser do
     @parser.status_code.should be_nil
 
     @parser.request_url.should be_nil
-    @parser.request_path.should be_nil
-    @parser.query_string.should be_nil
-    @parser.fragment.should be_nil
   end
 
   it "should optionally reset parser state on no-body responses" do
@@ -282,16 +270,55 @@ describe HTTP::Parser do
     @parser.upgrade_data.should == ''
   end
 
+  it 'should stop parsing headers when instructed' do
+    request = "GET /websocket HTTP/1.1\r\n" +
+      "host: localhost\r\n" +
+      "connection: Upgrade\r\n" +
+      "upgrade: websocket\r\n" +
+      "sec-websocket-key: SD6/hpYbKjQ6Sown7pBbWQ==\r\n" +
+      "sec-websocket-version: 13\r\n" +
+      "\r\n"
+
+    @parser.on_headers_complete = proc { |e| :stop }
+    offset = (@parser << request)
+    @parser.upgrade?.should be_true
+    @parser.upgrade_data.should == ''
+    offset.should == request.length
+  end
+
+  it "should execute on_body on requests with no content-length" do
+   @parser.reset!.should be_true
+
+   @head, @complete, @body = 0, 0, 0
+   @parser.on_headers_complete = proc {|h| @head += 1 }
+   @parser.on_message_complete = proc { @complete += 1 }
+   @parser.on_body = proc {|b| @body += 1 }
+
+   head_response = "HTTP/1.1 200 OK\r\n\r\nstuff"
+
+   @parser << head_response
+   @parser << ''
+   @head.should == 1
+   @complete.should == 1
+   @body.should == 1
+  end
+
+
   %w[ request response ].each do |type|
     JSON.parse(File.read(File.expand_path("../support/#{type}s.json", __FILE__))).each do |test|
       test['headers'] ||= {}
+      next unless HTTP::Parser.strict? == test['strict']
 
       it "should parse #{type}: #{test['name']}" do
         @parser << test['raw']
 
-        @parser.keep_alive?.should == test['should_keep_alive']
-        @parser.upgrade?.should == (test['upgrade']==1)
         @parser.http_method.should == test['method']
+        @parser.keep_alive?.should == test['should_keep_alive']
+
+        if test.has_key?('upgrade') and test['upgrade'] != 0
+          @parser.upgrade?.should be_true
+          @parser.upgrade_data.should == test['upgrade']
+        end
 
         fields = %w[
           http_major
@@ -301,9 +328,6 @@ describe HTTP::Parser do
         if test['type'] == 'HTTP_REQUEST'
           fields += %w[
             request_url
-            request_path
-            query_string
-            fragment
           ]
         else
           fields += %w[
