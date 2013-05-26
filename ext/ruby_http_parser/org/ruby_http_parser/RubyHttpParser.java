@@ -109,10 +109,10 @@ public class RubyHttpParser extends RubyObject {
     this.settings.on_url = new HTTPDataCallback() {
       public int cb(http_parser.lolevel.HTTPParser p, ByteBuffer buf, int pos, int len) {
         byte[] data = fetchBytes(buf, pos, len);
-        if (runtime.is1_8()) {
-          ((RubyString) requestUrl).cat(data);
-        } else {
+        if (runtime.is1_9() || runtime.is2_0()) {
           ((RubyString) requestUrl).cat(data, 0, data.length, UTF8);
+        } else {
+          ((RubyString) requestUrl).cat(data);
         }
         return 0;
       }
@@ -173,10 +173,10 @@ public class RubyHttpParser extends RubyObject {
             } else if (header_value_type == arraysSym) {
               ((RubyArray) val).add(RubyString.newStringLight(runtime, 10, UTF8));
             } else {
-              if (runtime.is1_8()) {
-                ((RubyString) val).cat(',').cat(' ');
-              } else {
+              if (runtime.is1_9() || runtime.is2_0()) {
                 ((RubyString) val).cat(',', UTF8).cat(' ', UTF8);
+              } else {
+                ((RubyString) val).cat(',').cat(' ');
               }
             }
           }
@@ -187,10 +187,10 @@ public class RubyHttpParser extends RubyObject {
           val = ((RubyArray) val).entry(-1);
         }
 
-        if (runtime.is1_8()) {
-          ((RubyString) val).cat(data);
-        } else {
+        if (runtime.is1_9() || runtime.is2_0()) {
           ((RubyString) val).cat(data, 0, data.length, UTF8);
+        } else {
+          ((RubyString) val).cat(data);
         }
 
         return 0;
@@ -201,18 +201,18 @@ public class RubyHttpParser extends RubyObject {
       public int cb(http_parser.lolevel.HTTPParser p) {
         headers = new RubyHash(runtime);
 
-        if (runtime.is1_8()) {
-          requestUrl = RubyString.newEmptyString(runtime);
-          requestPath = RubyString.newEmptyString(runtime);
-          queryString = RubyString.newEmptyString(runtime);
-          fragment = RubyString.newEmptyString(runtime);
-          upgradeData = RubyString.newEmptyString(runtime);
-        } else {
+        if (runtime.is1_9() || runtime.is2_0()) {
           requestUrl = RubyString.newEmptyString(runtime, UTF8);
           requestPath = RubyString.newEmptyString(runtime, UTF8);
           queryString = RubyString.newEmptyString(runtime, UTF8);
           fragment = RubyString.newEmptyString(runtime, UTF8);
           upgradeData = RubyString.newEmptyString(runtime, UTF8);
+        } else {
+          requestUrl = RubyString.newEmptyString(runtime);
+          requestPath = RubyString.newEmptyString(runtime);
+          queryString = RubyString.newEmptyString(runtime);
+          fragment = RubyString.newEmptyString(runtime);
+          upgradeData = RubyString.newEmptyString(runtime);
         }
 
         IRubyObject ret = runtime.getNil();
@@ -376,10 +376,10 @@ public class RubyHttpParser extends RubyObject {
 
     if (parser.getUpgrade()) {
       byte[] upData = fetchBytes(buf, buf.position(), buf.limit() - buf.position());
-      if (runtime.is1_8()) {
-        ((RubyString) upgradeData).cat(upData);
-      } else {
+      if (runtime.is1_9() || runtime.is2_0()) {
         ((RubyString) upgradeData).cat(upData, 0, upData.length, UTF8);
+      } else {
+        ((RubyString) upgradeData).cat(upData);
       }
     } else if (buf.hasRemaining() && !completed) {
       if (!stopped)
