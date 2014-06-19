@@ -19,6 +19,7 @@ src_dir = File.expand_path('../', __FILE__)
 end
 
 $CFLAGS << " -I#{src_dir}"
+$CFLAGS << ' -DRUBY_1_8_x' if RUBY_VERSION =~ /\A1\.8/
 
 dir_config("ruby_http_parser")
 create_makefile("ruby_http_parser")

@@ -22,6 +22,7 @@ describe HTTP::Parser do
     @parser.http_version.should be_nil
     @parser.http_method.should be_nil
     @parser.status_code.should be_nil
+    @parser.reason_phrase.should be_nil
 
     @parser.request_url.should be_nil
 
@@ -73,6 +74,7 @@ describe HTTP::Parser do
     @parser.http_version.should == [1,1]
     @parser.http_method.should == 'GET'
     @parser.status_code.should be_nil
+    @parser.reason_phrase.should be_nil
 
     @parser.request_url.should == '/test?ok=1'
 
@@ -119,6 +121,7 @@ describe HTTP::Parser do
     @parser.http_version.should be_nil
     @parser.http_method.should be_nil
     @parser.status_code.should be_nil
+    @parser.reason_phrase.should be_nil
 
     @parser.request_url.should be_nil
   end
@@ -330,9 +333,8 @@ describe HTTP::Parser do
             request_url
           ]
         else
-          fields += %w[
-            status_code
-          ]
+          fields += %w[status_code]
+          fields += %w[reason_phrase] if !defined?(JRUBY_VERSION)
         end
 
         fields.each do |field|

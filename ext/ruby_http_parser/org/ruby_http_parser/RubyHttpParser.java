@@ -65,6 +65,7 @@ public class RubyHttpParser extends RubyObject {
   private IRubyObject on_message_complete;
 
   private IRubyObject requestUrl;
+  private IRubyObject reasonPhrase;
   private IRubyObject requestPath;
   private IRubyObject queryString;
   private IRubyObject fragment;
@@ -311,6 +312,7 @@ public class RubyHttpParser extends RubyObject {
     this.headers = null;
 
     this.requestUrl = runtime.getNil();
+    this.reasonPhrase = runtime.getNil();
     this.requestPath = runtime.getNil();
     this.queryString = runtime.getNil();
     this.fragment = runtime.getNil();
@@ -449,6 +451,11 @@ public class RubyHttpParser extends RubyObject {
   @JRubyMethod(name = "request_url")
   public IRubyObject getRequestUrl() {
     return requestUrl == null ? runtime.getNil() : requestUrl;
+  }
+
+  @JRubyMethod(name = "reason_phrase")
+  public IRubyObject getReasonPhrase() {
+    return reasonPhrase == null ? runtime.getNil() : reasonPhrase;
   }
 
   @JRubyMethod(name = "request_path")
