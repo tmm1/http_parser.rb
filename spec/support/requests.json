@@ -454,7 +454,7 @@
     "request_url": "/",
     "num_headers": 2,
     "headers": {
-      "Line1": "abcdefghijklmno qrs",
+      "Line1": "abc\tdef ghi\t\tjkl  mno \t \tqrs",
       "Line2": "line2\t"
     },
     "body": "",

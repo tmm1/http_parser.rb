@@ -8,6 +8,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 301,
+    "reason_phrase": "Moved Permanently",
     "num_headers": 8,
     "headers": {
       "Location": "http://www.google.com/",
@@ -31,6 +32,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 5,
     "headers": {
       "Date": "Tue, 04 Aug 2009 07:59:32 GMT",
@@ -51,6 +53,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 404,
+    "reason_phrase": "Not Found",
     "num_headers": 0,
     "headers": {
 
@@ -68,6 +71,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 301,
+    "reason_phrase": null,
     "num_headers": 0,
     "headers": {
 
@@ -84,6 +88,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 2,
     "headers": {
       "Content-Type": "text/plain",
@@ -102,6 +107,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 2,
     "headers": {
       "Content-Type": "text/html; charset=utf-8",
@@ -119,6 +125,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 4,
     "headers": {
       "Content-Type": "text/html; charset=UTF-8",
@@ -138,6 +145,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 4,
     "headers": {
       "Server": "DCLK-AdSvr",
@@ -157,6 +165,7 @@
     "http_major": 1,
     "http_minor": 0,
     "status_code": 301,
+    "reason_phrase": "Moved Permanently",
     "num_headers": 9,
     "headers": {
       "Date": "Thu, 03 Jun 2010 09:56:32 GMT",
@@ -181,6 +190,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 11,
     "headers": {
       "Date": "Tue, 28 Sep 2010 01:14:13 GMT",
@@ -207,6 +217,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 500,
+    "reason_phrase": "Oriëntatieprobleem",
     "num_headers": 3,
     "headers": {
       "Date": "Fri, 5 Nov 2010 23:07:12 GMT+2",
@@ -225,6 +236,7 @@
     "http_major": 0,
     "http_minor": 9,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 0,
     "headers": {
 
@@ -241,6 +253,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 1,
     "headers": {
       "Content-Type": "text/plain"
@@ -257,6 +270,7 @@
     "http_major": 1,
     "http_minor": 0,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 1,
     "headers": {
       "Connection": "keep-alive"
@@ -274,6 +288,7 @@
     "http_major": 1,
     "http_minor": 0,
     "status_code": 204,
+    "reason_phrase": "No content",
     "num_headers": 1,
     "headers": {
       "Connection": "keep-alive"
@@ -291,6 +306,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 0,
     "headers": {
 
@@ -308,6 +324,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 204,
+    "reason_phrase": "No content",
     "num_headers": 0,
     "headers": {
 
@@ -325,6 +342,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 204,
+    "reason_phrase": "No content",
     "num_headers": 1,
     "headers": {
       "Connection": "close"
@@ -342,6 +360,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 1,
     "headers": {
       "Transfer-Encoding": "chunked"
@@ -360,6 +379,7 @@
     "http_major": 1,
     "http_minor": 1,
     "status_code": 200,
+    "reason_phrase": "OK",
     "num_headers": 7,
     "headers": {
       "Server": "Microsoft-IIS/6.0",

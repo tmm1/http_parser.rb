@@ -17,6 +17,7 @@ typedef struct ParserWrapper {
   ryah_http_parser parser;
 
   VALUE request_url;
+  VALUE reason_phrase;
 
   VALUE headers;
 
@@ -45,6 +46,8 @@ void ParserWrapper_init(ParserWrapper *wrapper) {
   wrapper->parser.http_major = 0;
   wrapper->parser.http_minor = 0;
 
+  wrapper->reason_phrase = Qnil;
+
   wrapper->request_url = Qnil;
 
   wrapper->upgrade_data = Qnil;
@@ -60,6 +63,7 @@ void ParserWrapper_mark(void *data) {
   if(data) {
     ParserWrapper *wrapper = (ParserWrapper *) data;
     rb_gc_mark_maybe(wrapper->request_url);
+    rb_gc_mark_maybe(wrapper->reason_phrase);
     rb_gc_mark_maybe(wrapper->upgrade_data);
     rb_gc_mark_maybe(wrapper->headers);
     rb_gc_mark_maybe(wrapper->on_message_begin);
@@ -124,6 +128,23 @@ int on_message_begin(ryah_http_parser *parser) {
 int on_url(ryah_http_parser *parser, const char *at, size_t length) {
   GET_WRAPPER(wrapper, parser);
   rb_str_cat(wrapper->request_url, at, length);
+  return 0;
+}
+
+int on_status(ryah_http_parser *parser, const char *at, size_t length) {
+  GET_WRAPPER(wrapper, parser);
+
+  if (at && length) {
+    if (wrapper->reason_phrase == Qnil) {
+      wrapper->reason_phrase = rb_str_new(at, length);
+
+#if !defined(RUBY_1_8_x)
+      rb_funcall(wrapper->reason_phrase, rb_intern("force_encoding"), 1, rb_const_get(rb_path2class("Encoding"), rb_intern("UTF_8")));
+#endif
+    } else {
+      rb_str_cat(wrapper->reason_phrase, at, length);
+    }
+  }
   return 0;
 }
 
@@ -249,6 +270,7 @@ int on_message_complete(ryah_http_parser *parser) {
 static ryah_http_parser_settings settings = {
   .on_message_begin = on_message_begin,
   .on_url = on_url,
+  .on_status = on_status,
   .on_header_field = on_header_field,
   .on_header_value = on_header_value,
   .on_headers_complete = on_headers_complete,
@@ -439,6 +461,7 @@ VALUE Parser_status_code(VALUE self) {
   }
 
 DEFINE_GETTER(request_url);
+DEFINE_GETTER(reason_phrase);
 DEFINE_GETTER(headers);
 DEFINE_GETTER(upgrade_data);
 DEFINE_GETTER(header_value_type);
@@ -504,6 +527,7 @@ void Init_ruby_http_parser() {
 
   rb_define_method(cParser, "http_method", Parser_http_method, 0);
   rb_define_method(cParser, "status_code", Parser_status_code, 0);
+  rb_define_method(cParser, "reason_phrase", Parser_reason_phrase, 0);
 
   rb_define_method(cParser, "request_url", Parser_request_url, 0);
   rb_define_method(cParser, "headers", Parser_headers, 0);
