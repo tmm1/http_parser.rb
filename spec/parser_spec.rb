@@ -1,3 +1,7 @@
+if defined? Encoding
+  Encoding.default_external = "UTF-8"
+end
+
 require "spec_helper"
 require "json"
 
