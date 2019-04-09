@@ -12,6 +12,8 @@ end
 if RUBY_PLATFORM =~ /java/
   Rake::JavaExtensionTask.new("ruby_http_parser", gemspec) do |ext|
     ext.classpath = File.expand_path('../../ext/ruby_http_parser/vendor/http-parser-java/ext/primitives.jar', __FILE__)
+    ext.source_version = '1.8'
+    ext.target_version = '1.8'
   end
 else
   Rake::ExtensionTask.new("ruby_http_parser", gemspec) do |ext|
