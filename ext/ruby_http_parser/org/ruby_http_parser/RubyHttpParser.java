@@ -8,6 +8,9 @@ import http_parser.lolevel.HTTPDataCallback;
 import http_parser.lolevel.ParserSettings;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -81,6 +84,10 @@ public class RubyHttpParser extends RubyObject {
   private byte[] _last_header;
 
   private static final Encoding UTF8 = UTF8Encoding.INSTANCE;
+
+  private static final List<String> VALUE_TYPES = new ArrayList<String>(
+    Arrays.asList("mixed", "arrays", "strings")
+  );
 
   public RubyHttpParser(final Ruby runtime, RubyClass clazz) {
     super(runtime, clazz);
@@ -495,7 +502,7 @@ public class RubyHttpParser extends RubyObject {
   @JRubyMethod(name = "header_value_type=")
   public IRubyObject set_header_value_type(IRubyObject val) {
     String valString = val.toString();
-    if (valString != "mixed" && valString != "arrays" && valString != "strings") {
+    if (!VALUE_TYPES.contains(valString)) {
       throw runtime.newArgumentError("Invalid header value type");
     }
     header_value_type = val;
