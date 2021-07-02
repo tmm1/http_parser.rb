@@ -67,7 +67,6 @@ public class RubyHttpParser extends RubyObject {
   private IRubyObject on_body;
   private IRubyObject on_message_complete;
 
-  private IRubyObject status;
   private IRubyObject requestUrl;
   private IRubyObject requestPath;
   private IRubyObject queryString;
@@ -113,18 +112,6 @@ public class RubyHttpParser extends RubyObject {
 
   private void initSettings() {
     this.settings = new ParserSettings();
-
-    this.settings.on_status = new HTTPDataCallback() {
-      public int cb(http_parser.lolevel.HTTPParser p, ByteBuffer buf, int pos, int len) {
-        byte[] data = fetchBytes(buf, pos, len);
-        if (runtime.is1_9() || runtime.is2_0()) {
-          ((RubyString) status).cat(data, 0, data.length, UTF8);
-        } else {
-          ((RubyString) status).cat(data);
-        }
-        return 0;
-      }
-    };
 
     this.settings.on_url = new HTTPDataCallback() {
       public int cb(http_parser.lolevel.HTTPParser p, ByteBuffer buf, int pos, int len) {
@@ -222,14 +209,12 @@ public class RubyHttpParser extends RubyObject {
         headers = new RubyHash(runtime);
 
         if (runtime.is1_9() || runtime.is2_0()) {
-          status = RubyString.newEmptyString(runtime, UTF8);
           requestUrl = RubyString.newEmptyString(runtime, UTF8);
           requestPath = RubyString.newEmptyString(runtime, UTF8);
           queryString = RubyString.newEmptyString(runtime, UTF8);
           fragment = RubyString.newEmptyString(runtime, UTF8);
           upgradeData = RubyString.newEmptyString(runtime, UTF8);
         } else {
-          status = RubyString.newEmptyString(runtime);
           requestUrl = RubyString.newEmptyString(runtime);
           requestPath = RubyString.newEmptyString(runtime);
           queryString = RubyString.newEmptyString(runtime);
@@ -331,8 +316,7 @@ public class RubyHttpParser extends RubyObject {
     this.parser = new HTTPParser();
     this.parser.HTTP_PARSER_STRICT = true;
     this.headers = null;
-    
-    this.status = runtime.getNil();
+
     this.requestUrl = runtime.getNil();
     this.requestPath = runtime.getNil();
     this.queryString = runtime.getNil();
@@ -467,11 +451,6 @@ public class RubyHttpParser extends RubyObject {
   @JRubyMethod(name = "headers")
   public IRubyObject getHeaders() {
     return headers == null ? runtime.getNil() : headers;
-  }
-
-  @JRubyMethod(name = "status")
-  public IRubyObject getStatus() {
-    return status == null ? runtime.getNil() : status;
   }
 
   @JRubyMethod(name = "request_url")
