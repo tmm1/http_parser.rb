@@ -387,7 +387,7 @@ describe HTTP::Parser do
           expect(@parser.send("request_url")).to eq(test["request_url"].force_encoding(Encoding::BINARY))
         else
           expect(@parser.send("status_code")).to eq(test["status_code"])
-          expect(@parser.send("status")).to eq(test["status"].force_encoding(Encoding::BINARY))
+          expect(@parser.send("status")).to eq(test["status"].force_encoding(Encoding::BINARY)) if !defined?(JRUBY_VERSION)
         end
 
         expect(@headers.size).to eq(test['num_headers'])
