@@ -316,7 +316,7 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
   ParserWrapper *wrapper = NULL;
   DATA_GET(self, ParserWrapper, wrapper);
 
-  wrapper->header_value_type = rb_iv_get(CLASS_OF(self), "@default_header_value_type");
+  VALUE default_keyword_value_type = Qnil;
 
   if (argc == 1) {
     wrapper->callback_object = argv[0];
@@ -324,7 +324,13 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
 
   if (argc == 2) {
     wrapper->callback_object = argv[0];
-    wrapper->header_value_type = argv[1];
+    default_keyword_value_type = argv[1];
+  }
+
+  if (default_keyword_value_type == Qnil) {
+    wrapper->header_value_type = rb_iv_get(CLASS_OF(self), "@default_header_value_type");
+  } else {
+    wrapper->header_value_type = default_keyword_value_type;
   }
 
   return self;
