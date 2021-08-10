@@ -489,6 +489,10 @@ VALUE Parser_reset(VALUE self) {
 }
 
 void Init_ruby_http_parser() {
+#ifdef HAVE_RB_EXT_RACTOR_SAFE
+  rb_ext_ractor_safe(true);
+#endif
+
   VALUE mHTTP = rb_define_module("HTTP");
   cParser = rb_define_class_under(mHTTP, "Parser", rb_cObject);
   cRequestParser = rb_define_class_under(mHTTP, "RequestParser", cParser);
