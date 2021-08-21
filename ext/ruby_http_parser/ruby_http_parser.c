@@ -319,11 +319,8 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
   VALUE default_header_value_type = Qnil;
 
   if (argc > 0 && RB_TYPE_P(argv[argc-1], T_HASH)) {
-    static ID keyword_ids[1];
-
-    if (!keyword_ids[0]) {
-      keyword_ids[0] = rb_intern("default_header_value_type");
-    }
+    ID keyword_ids[1];
+    keyword_ids[0] = rb_intern("default_header_value_type");
     rb_get_kwargs(argv[argc-1], keyword_ids, 0, 1, &default_header_value_type);
     if (default_header_value_type == Qundef) {
       default_header_value_type = Qnil;
