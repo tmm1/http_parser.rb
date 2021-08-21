@@ -318,7 +318,7 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
 
   VALUE default_header_value_type = Qnil;
 
-  if (RB_TYPE_P(argv[argc-1], T_HASH)) {
+  if (argc > 0 && RB_TYPE_P(argv[argc-1], T_HASH)) {
     static ID keyword_ids[1];
 
     if (!keyword_ids[0]) {
