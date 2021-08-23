@@ -316,7 +316,17 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
   ParserWrapper *wrapper = NULL;
   DATA_GET(self, ParserWrapper, wrapper);
 
-  wrapper->header_value_type = rb_iv_get(CLASS_OF(self), "@default_header_value_type");
+  VALUE default_header_value_type = Qnil;
+
+  if (argc > 0 && RB_TYPE_P(argv[argc-1], T_HASH)) {
+    ID keyword_ids[1];
+    keyword_ids[0] = rb_intern("default_header_value_type");
+    rb_get_kwargs(argv[argc-1], keyword_ids, 0, 1, &default_header_value_type);
+    if (default_header_value_type == Qundef) {
+      default_header_value_type = Qnil;
+    }
+    --argc;
+  }
 
   if (argc == 1) {
     wrapper->callback_object = argv[0];
@@ -324,7 +334,13 @@ VALUE Parser_initialize(int argc, VALUE *argv, VALUE self) {
 
   if (argc == 2) {
     wrapper->callback_object = argv[0];
-    wrapper->header_value_type = argv[1];
+    default_header_value_type = argv[1];
+  }
+
+  if (default_header_value_type == Qnil) {
+    wrapper->header_value_type = rb_iv_get(CLASS_OF(self), "@default_header_value_type");
+  } else {
+    wrapper->header_value_type = default_header_value_type;
   }
 
   return self;
@@ -489,6 +505,10 @@ VALUE Parser_reset(VALUE self) {
 }
 
 void Init_ruby_http_parser() {
+#ifdef HAVE_RB_EXT_RACTOR_SAFE
+  rb_ext_ractor_safe(true);
+#endif
+
   VALUE mHTTP = rb_define_module("HTTP");
   cParser = rb_define_class_under(mHTTP, "Parser", rb_cObject);
   cRequestParser = rb_define_class_under(mHTTP, "RequestParser", cParser);

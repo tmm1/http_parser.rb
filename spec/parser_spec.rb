@@ -31,6 +31,25 @@ describe HTTP::Parser do
     expect(@parser.header_value_type).to eq(:mixed)
   end
 
+  it "should be able to run in non-main ractors" do
+    skip unless Kernel.const_defined?(:Ractor)
+    default_header_value_type = HTTP::Parser.default_header_value_type
+    r = Ractor.new(default_header_value_type) { |type|
+      parser = HTTP::Parser.new(default_header_value_type: type)
+      done = false
+      parser.on_message_complete = proc {
+        done = true
+      }
+      parser <<
+        "GET /ractor HTTP/1.1\r\n" +
+        "Content-Length: 5\r\n" +
+        "\r\n" +
+        "World"
+      done
+    }
+    expect(r.take).to be true
+  end
+
   it "should allow us to set the header value type" do
     [:mixed, :arrays, :strings].each do |type|
       @parser.header_value_type = type
@@ -38,6 +57,9 @@ describe HTTP::Parser do
 
       parser_tmp = HTTP::Parser.new(nil, type)
       expect(parser_tmp.header_value_type).to eq(type)
+
+      parser_tmp2 = HTTP::Parser.new(default_header_value_type: type)
+      expect(parser_tmp2.header_value_type).to eq(type)
     end
   end
 
