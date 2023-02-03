@@ -34,7 +34,7 @@ RUBY_VERSION =~ /(\\d+.\\d+)/
 require "\#{$1}/ruby_http_parser"
     eoruby
   end
-  at_exit{ FileUtils.rm t.name if File.exists?(t.name) }
+  at_exit{ FileUtils.rm t.name if File.exist?(t.name) }
 end
 
 if Rake::Task.task_defined?(:cross)
