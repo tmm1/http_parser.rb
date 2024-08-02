@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.license = 'MIT'
 
   s.homepage = "https://github.com/tmm1/http_parser.rb"
-  s.files = `git ls-files`.split("\n") + Dir['ext/ruby_http_parser/vendor/**/*']
+  s.files = `git ls-files`.split("\n").grep_v(%r{spec/}) + Dir['ext/ruby_http_parser/vendor/**/*']
 
   s.require_paths = ["lib"]
   s.extensions    = ["ext/ruby_http_parser/extconf.rb"]
