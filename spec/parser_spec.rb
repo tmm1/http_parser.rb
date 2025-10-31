@@ -47,7 +47,11 @@ describe HTTP::Parser do
         "World"
       done
     }
-    expect(r.take).to be true
+    if r.respond_to?(:value) # ruby 3.5
+      expect(r.value).to be true
+    else
+      expect(r.take).to be true
+    end
   end
 
   it "should allow us to set the header value type" do
