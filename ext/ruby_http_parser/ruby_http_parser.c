@@ -81,6 +81,14 @@ void ParserWrapper_free(void *data) {
   }
 }
 
+static const rb_data_type_t ParserWrapper_type = {
+  "ParserWrapper",
+  {
+    ParserWrapper_mark,
+    ParserWrapper_free,
+  },
+};
+
 static VALUE cParser;
 static VALUE cRequestParser;
 static VALUE cResponseParser;
@@ -293,7 +301,7 @@ VALUE Parser_alloc_by_type(VALUE klass, enum ryah_http_parser_type type) {
 
   ParserWrapper_init(wrapper);
 
-  return Data_Wrap_Struct(klass, ParserWrapper_mark, ParserWrapper_free, wrapper);
+  return TypedData_Wrap_Struct(klass, &ParserWrapper_type, wrapper);
 }
 
 VALUE Parser_alloc(VALUE klass) {
